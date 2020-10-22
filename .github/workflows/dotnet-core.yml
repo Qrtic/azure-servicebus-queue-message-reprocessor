@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  config: Release
+  solutionDir: Azure.ServiceBus.Queue.MessageReprocessor
+
 jobs:
   build:
 
@@ -13,15 +17,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Go to main folder
-      run: cd Azure.ServiceBus.Queue.MessageReprocessor
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.301
     - name: Install dependencies
-      run: dotnet restore
+      run: dotnet restore $solutionDir
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build --configuration $config --no-restore $solutionDir
     - name: Test
-      run: dotnet test --no-restore --verbosity normal
+      run: dotnet test --configuration $config --no-restore --verbosity normal $solutionDir

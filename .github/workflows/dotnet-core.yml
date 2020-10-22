@@ -17,6 +17,8 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.301
+    - name: Go to main folder
+      run: cd Azure.ServiceBus.Queue.MessageReprocessor
     - name: Install dependencies
       run: dotnet restore
     - name: Build

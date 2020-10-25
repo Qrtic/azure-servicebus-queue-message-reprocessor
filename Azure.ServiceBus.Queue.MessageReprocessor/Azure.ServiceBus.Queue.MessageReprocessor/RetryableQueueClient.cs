@@ -8,166 +8,207 @@ using Microsoft.Azure.ServiceBus.Core;
 
 namespace Azure.ServiceBus.Queue.MessageReprocessor
 {
-    // TODO: all sort of verification
     public class RetryableQueueClient : IReceiverClient
     {
-        private const string RetryAttemptPropertyName = "retry-attempt";
-        
         private readonly RetrySettings _retrySettings;
-        private readonly IQueueClient _receiverClientImplementation;
+        private readonly IMessagePropertiesHelper _messagePropertiesHelper;
+        private readonly IQueueClient _queueClientImplementation;
+        private readonly IMessageInspector _messageInspector;
+        private readonly IDateTimeProvider _dateTimeProvider;
 
         public RetryableQueueClient(string connectionString, string queueName, RetrySettings retrySettings)
+            : this(new QueueClient(
+                string.IsNullOrEmpty(connectionString)
+                    ? throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString))
+                    : connectionString,
+                string.IsNullOrEmpty(queueName)
+                    ? throw new ArgumentException("Value cannot be null or empty.", nameof(queueName))
+                    : queueName), retrySettings)
         {
-            if (string.IsNullOrEmpty(connectionString))
-                throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
-            if (string.IsNullOrEmpty(queueName))
-                throw new ArgumentException("Value cannot be null or empty.", nameof(queueName));
-            _retrySettings = retrySettings;
-
-            // check that queue exists
-            // check if that doesn't exist we can create a new one dynamically
-            _receiverClientImplementation = new QueueClient(connectionString, queueName);
         }
 
-        public RetryableQueueClient(IQueueClient receiverClientImplementation)
+        public RetryableQueueClient(IQueueClient queueClient, RetrySettings retrySettings)
+            : this(queueClient, retrySettings, new MessagePropertiesHelper(), new MessageInspector(), new DateTimeProvider())
         {
-            _receiverClientImplementation = receiverClientImplementation ??
-                                            throw new ArgumentNullException(nameof(receiverClientImplementation));
+        }
+
+        internal RetryableQueueClient(IQueueClient queueClient,
+            RetrySettings retrySettings,
+            IMessagePropertiesHelper messagePropertiesHelper,
+            IMessageInspector messageInspector,
+            IDateTimeProvider dateTimeProvider)
+        {
+            _queueClientImplementation = queueClient ??
+                                            throw new ArgumentNullException(nameof(queueClient));
+            _retrySettings = retrySettings ??
+                             throw new ArgumentNullException(nameof(retrySettings));
+            _messagePropertiesHelper = messagePropertiesHelper ??
+                                     throw new ArgumentNullException(nameof(messagePropertiesHelper));
+            _messageInspector = messageInspector ??
+                                throw new ArgumentNullException(nameof(messageInspector));
+            _dateTimeProvider = dateTimeProvider ??
+                                throw new ArgumentNullException(nameof(dateTimeProvider));
         }
 
         public void RegisterMessageHandler(Func<Message, CancellationToken, Task> handler, Func<ExceptionReceivedEventArgs, Task> exceptionReceivedHandler)
         {
-            // Main code
-            _receiverClientImplementation.RegisterMessageHandler(GetMessageHandlerWrapper(handler), exceptionReceivedHandler);
+            RegisterMessageHandler(handler, GetDefaultMessageHandlerOptions(exceptionReceivedHandler));
         }
 
         public void RegisterMessageHandler(Func<Message, CancellationToken, Task> handler, MessageHandlerOptions messageHandlerOptions)
         {
-            messageHandlerOptions.AutoComplete = false;
-            messageHandlerOptions.MaxConcurrentCalls = 1; // Not sure what will happen with this now
-            // Main code
-            _receiverClientImplementation.RegisterMessageHandler(GetMessageHandlerWrapper(handler), messageHandlerOptions);
+            if (handler == null) throw new ArgumentNullException(nameof(handler));
+            messageHandlerOptions ??= GetDefaultMessageHandlerOptions();
+            if (messageHandlerOptions.AutoComplete) throw new ArgumentException(
+                $"{nameof(messageHandlerOptions)}.{nameof(messageHandlerOptions.AutoComplete)} should be set to false.",
+                nameof(messageHandlerOptions));
+            if (messageHandlerOptions.MaxConcurrentCalls != 1) throw new ArgumentException(
+                $"{nameof(messageHandlerOptions)}.{nameof(messageHandlerOptions.MaxConcurrentCalls)} should be set to 1.",
+                nameof(messageHandlerOptions));
+
+            _queueClientImplementation.RegisterMessageHandler(
+                GetMessageHandlerWrapper(handler, GetExceptionHandler(messageHandlerOptions)),
+                messageHandlerOptions);
         }
 
         public Task CloseAsync()
         {
-            return _receiverClientImplementation.CloseAsync();
+            return _queueClientImplementation.CloseAsync();
         }
 
         public void RegisterPlugin(ServiceBusPlugin serviceBusPlugin)
         {
-            _receiverClientImplementation.RegisterPlugin(serviceBusPlugin);
+            _queueClientImplementation.RegisterPlugin(serviceBusPlugin);
         }
 
         public void UnregisterPlugin(string serviceBusPluginName)
         {
-            _receiverClientImplementation.UnregisterPlugin(serviceBusPluginName);
+            _queueClientImplementation.UnregisterPlugin(serviceBusPluginName);
         }
 
-        public string ClientId => _receiverClientImplementation.ClientId;
+        public string ClientId => _queueClientImplementation.ClientId;
 
-        public bool IsClosedOrClosing => _receiverClientImplementation.IsClosedOrClosing;
+        public bool IsClosedOrClosing => _queueClientImplementation.IsClosedOrClosing;
 
-        public string Path => _receiverClientImplementation.Path;
+        public string Path => _queueClientImplementation.Path;
 
         public TimeSpan OperationTimeout
         {
-            get => _receiverClientImplementation.OperationTimeout;
-            set => _receiverClientImplementation.OperationTimeout = value;
+            get => _queueClientImplementation.OperationTimeout;
+            set => _queueClientImplementation.OperationTimeout = value;
         }
 
-        public ServiceBusConnection ServiceBusConnection => _receiverClientImplementation.ServiceBusConnection;
+        public ServiceBusConnection ServiceBusConnection => _queueClientImplementation.ServiceBusConnection;
 
-        public bool OwnsConnection => _receiverClientImplementation.OwnsConnection;
+        public bool OwnsConnection => _queueClientImplementation.OwnsConnection;
 
-        public IList<ServiceBusPlugin> RegisteredPlugins => _receiverClientImplementation.RegisteredPlugins;
+        public IList<ServiceBusPlugin> RegisteredPlugins => _queueClientImplementation.RegisteredPlugins;
 
         public Task UnregisterMessageHandlerAsync(TimeSpan inflightMessageHandlerTasksWaitTimeout)
         {
-            return _receiverClientImplementation.UnregisterMessageHandlerAsync(inflightMessageHandlerTasksWaitTimeout);
+            return _queueClientImplementation.UnregisterMessageHandlerAsync(inflightMessageHandlerTasksWaitTimeout);
         }
 
         public Task CompleteAsync(string lockToken)
         {
-            return _receiverClientImplementation.CompleteAsync(lockToken);
+            return _queueClientImplementation.CompleteAsync(lockToken);
         }
 
         public Task AbandonAsync(string lockToken, IDictionary<string, object> propertiesToModify = null)
         {
-            return _receiverClientImplementation.AbandonAsync(lockToken, propertiesToModify);
+            return _queueClientImplementation.AbandonAsync(lockToken, propertiesToModify);
         }
 
         public Task DeadLetterAsync(string lockToken, IDictionary<string, object> propertiesToModify = null)
         {
-            return _receiverClientImplementation.DeadLetterAsync(lockToken, propertiesToModify);
+            return _queueClientImplementation.DeadLetterAsync(lockToken, propertiesToModify);
         }
 
         public Task DeadLetterAsync(string lockToken, string deadLetterReason, string deadLetterErrorDescription = null)
         {
-            return _receiverClientImplementation.DeadLetterAsync(lockToken, deadLetterReason, deadLetterErrorDescription);
+            return _queueClientImplementation.DeadLetterAsync(lockToken, deadLetterReason, deadLetterErrorDescription);
         }
 
         public int PrefetchCount
         {
-            get => _receiverClientImplementation.PrefetchCount;
-            set => _receiverClientImplementation.PrefetchCount = value;
+            get => _queueClientImplementation.PrefetchCount;
+            set => _queueClientImplementation.PrefetchCount = value;
         }
 
-        public ReceiveMode ReceiveMode => _receiverClientImplementation.ReceiveMode;
-        
-        private Func<Message, CancellationToken, Task> GetMessageHandlerWrapper(Func<Message, CancellationToken, Task> handler)
+        public ReceiveMode ReceiveMode => _queueClientImplementation.ReceiveMode;
+
+        private Func<Message, CancellationToken, Task> GetMessageHandlerWrapper(Func<Message, CancellationToken, Task> handler,
+            Func<Message, Exception, Task> exceptionHandler)
         {
             return async (message, cancellationToken) =>
             {
                 try
                 {
                     await handler(message, cancellationToken);
-                    
-                    await _receiverClientImplementation.CompleteAsync(GetLockToken(message));
+
+                    await _queueClientImplementation.CompleteAsync(_messageInspector.GetLockToken(message));
                 }
                 catch (RetryableOperationException)
                 {
                     await DelayMessage(message, cancellationToken);
                 }
+                catch (Exception e)
+                {
+                    await exceptionHandler(message, e);
+                }
             };
         }
 
-        // lock token will throw for test substitutes
-        private string GetLockToken(Message message) => message.SystemProperties.LockToken;
-
-        private int GetAttempt(Message message)
+        private Func<Message, Exception, Task> GetExceptionHandler(MessageHandlerOptions messageHandlerOptions)
         {
-            message.UserProperties.TryGetValue(RetryAttemptPropertyName, out object attempt);
-            if (attempt is int attemptNumber)
+            return async (message, exception) =>
             {
-                return attemptNumber + 1;
-            }
-            return 1;
+                var args = new ExceptionReceivedEventArgs(
+                    exception,
+                    ExceptionReceivedEventArgsAction.UserCallback,
+                    _queueClientImplementation.ServiceBusConnection.Endpoint.Authority,
+                    _queueClientImplementation.QueueName,
+                    _queueClientImplementation.ClientId);
+                messageHandlerOptions.ExceptionReceivedHandler?.Invoke(args);
+
+                await _queueClientImplementation.AbandonAsync(_messageInspector.GetLockToken(message));
+            };
         }
-        
-        private async Task DelayMessage(Message message, CancellationToken cancellationToken)
+
+        private MessageHandlerOptions GetDefaultMessageHandlerOptions(Func<ExceptionReceivedEventArgs, Task> exceptionReceivedHandler = null)
         {
-            int attempt = GetAttempt(message);
-            string lockToken = GetLockToken(message);
+            exceptionReceivedHandler ??= args => Task.CompletedTask;
+            return new MessageHandlerOptions(exceptionReceivedHandler)
+            {
+                AutoComplete = false,
+                MaxConcurrentCalls = 1
+            };
+        }
+
+        private async Task DelayMessage(Message message, CancellationToken _)
+        {
+            int attempt = _messagePropertiesHelper.GetAttempt(message) + 1;
+            string lockToken = _messageInspector.GetLockToken(message);
+
             if (!_retrySettings.RetryDelayStrategy.CanDelay(attempt))
             {
-                await _receiverClientImplementation.DeadLetterAsync(lockToken, "Exceed retry attempts.");
+                await _queueClientImplementation.DeadLetterAsync(lockToken, "Exceed retry attempts.");
+                return;
             }
-            else
-            {
-                TimeSpan delayOn = _retrySettings.RetryDelayStrategy.GetDelay(attempt);
-                Message messageCopy = message.Clone();
-                // requires to set new id if the queue checks for message duplicates
-                messageCopy.MessageId = Guid.NewGuid().ToString();
-                messageCopy.UserProperties[RetryAttemptPropertyName] = attempt;
-                messageCopy.ScheduledEnqueueTimeUtc = DateTime.UtcNow.Add(delayOn);
 
-                using TransactionScope transactionScope = new TransactionScope();
+            TimeSpan delay = _retrySettings.RetryDelayStrategy.GetDelay(attempt);
+            Message messageCopy = message.Clone();
+            // requires to set new id if the queue checks for message duplicates
+            messageCopy.MessageId = Guid.NewGuid().ToString();
+            _messagePropertiesHelper.EnrichWithAttempts(messageCopy, attempt);
+
+            using (TransactionScope transactionScope = new TransactionScope())
+            {
                 // If any of those operations fail it means we've lost connection to the ServiceBus
                 // The next time we see this message again will be handled as it was abandoned
                 await Task.WhenAll(
-                    _receiverClientImplementation.SendAsync(messageCopy),
-                    _receiverClientImplementation.CompleteAsync(lockToken));
+                    _queueClientImplementation.ScheduleMessageAsync(messageCopy, _dateTimeProvider.UtcNow + delay),
+                    _queueClientImplementation.CompleteAsync(lockToken));
                 transactionScope.Complete();
             }
         }

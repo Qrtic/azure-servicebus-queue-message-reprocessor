@@ -1,9 +1,11 @@
 ﻿#nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 namespace Azure.ServiceBus.Queue.MessageReprocessor
 {
+    [ExcludeFromCodeCoverage]
     public class RetryableOperationException : Exception
     {
         public RetryableOperationException()

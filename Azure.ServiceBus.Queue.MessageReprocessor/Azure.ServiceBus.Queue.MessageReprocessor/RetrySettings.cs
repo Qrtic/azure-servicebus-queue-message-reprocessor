@@ -6,7 +6,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor
     {
         public IRetryDelayStrategy RetryDelayStrategy { get; }
 
-        private RetrySettings(IRetryDelayStrategy retryDelayStrategy)
+        public RetrySettings(IRetryDelayStrategy retryDelayStrategy)
         {
             RetryDelayStrategy = retryDelayStrategy ?? throw new ArgumentNullException(nameof(retryDelayStrategy));
         }

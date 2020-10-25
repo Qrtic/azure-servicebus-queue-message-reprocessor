@@ -14,7 +14,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor
             _maxAttempt = maxAttempt;
             _delay = delay;
         }
-        
+
         public bool CanDelay(int attempt)
         {
             return attempt <= _maxAttempt;
@@ -22,6 +22,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor
 
         public TimeSpan GetDelay(int attempt)
         {
+            if (attempt <= 0 || attempt > _maxAttempt) throw new ArgumentOutOfRangeException(nameof(attempt));
             return _delay;
         }
     }

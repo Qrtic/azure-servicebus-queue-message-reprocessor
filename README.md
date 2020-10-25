@@ -1,3 +1,5 @@
+![Build](https://github.com/Qrtic/azure-servicebus-queue-message-reprocessor/Build/badge.svg) [![codecov](https://codecov.io/gh/Qrtic/azure-servicebus-queue-message-reprocessor/branch/main/graph/badge.svg?token=2RMSWMKG98)](azure-servicebus-queue-message-reprocessor)
+
 # azure-servicebus-queue-message-reprocessor
 This .NET Standard library adds a wrapper for Azure Service Bus Queue client to customize message handling retry mechanism.
 
@@ -26,3 +28,7 @@ void onMessageReceived(Message message)
   }
 }
 ```
+
+## Maintainer(s)
+
+- [@qrtic](https://github.com/qrtic)

@@ -1,10 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.ServiceBus.Queue.MessageReprocessor", "Azure.ServiceBus.Queue.MessageReprocessor\Azure.ServiceBus.Queue.MessageReprocessor.csproj", "{4B4DD95F-E55D-4DB3-ADA0-9B1BA5EDD739}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.ServiceBus.Queue.MessageReprocessor", "src\Azure.ServiceBus.Queue.MessageReprocessor\Azure.ServiceBus.Queue.MessageReprocessor.csproj", "{4B4DD95F-E55D-4DB3-ADA0-9B1BA5EDD739}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.ServiceBus.Queue.MessageReprocessor.UnitTests", "Azure.ServiceBus.Queue.MessageReprocessor.UnitTests\Azure.ServiceBus.Queue.MessageReprocessor.UnitTests.csproj", "{B176980C-1494-4FE9-9FBE-23A129056521}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.ServiceBus.Queue.MessageReprocessor.UnitTests", "src\Azure.ServiceBus.Queue.MessageReprocessor.UnitTests\Azure.ServiceBus.Queue.MessageReprocessor.UnitTests.csproj", "{B176980C-1494-4FE9-9FBE-23A129056521}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.ServiceBus.Queue.MessageReprocessor.IntegrationTests", "Azure.ServiceBus.Queue.MessageReprocessor.IntegrationTests\Azure.ServiceBus.Queue.MessageReprocessor.IntegrationTests.csproj", "{61D4354F-E148-45F3-B91A-95D0FEC754E6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.ServiceBus.Queue.MessageReprocessor.IntegrationTests", "src\Azure.ServiceBus.Queue.MessageReprocessor.IntegrationTests\Azure.ServiceBus.Queue.MessageReprocessor.IntegrationTests.csproj", "{61D4354F-E148-45F3-B91A-95D0FEC754E6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

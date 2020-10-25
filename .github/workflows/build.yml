@@ -8,7 +8,6 @@ on:
 
 env:
   config: Release
-  solutionDir: Azure.ServiceBus.Queue.MessageReprocessor
 
 jobs:
   build:
@@ -49,13 +48,13 @@ jobs:
         dotnet-version: 3.1.301
     - name: Install dependencies
 
-      run: dotnet restore $solutionDir
+      run: dotnet restore
 
     - name: Build
-      run: dotnet build --configuration $config --no-restore $solutionDir
+      run: dotnet build --configuration $config --no-restore
 
     - name: Test
-      run: dotnet test --configuration $config --no-restore --verbosity normal --collect:"XPlat Code Coverage" $solutionDir
+      run: dotnet test --configuration $config --no-restore --verbosity normal --collect:"XPlat Code Coverage"
       
     - name: Upload Code Coverage
       uses: codecov/codecov-action@v1

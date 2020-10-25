@@ -11,7 +11,6 @@ jobs:
     name: 'Build CLI'
     runs-on: ${{ matrix.os }}
     env:
-      config: Release
       # don't print dotnet logo
       DOTNET_NOLOGO: true
       # disable telemetry (reduces dotnet tool output in logs)
@@ -44,15 +43,15 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.301
-    - name: Install dependencies
 
+    - name: Install dependencies
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --configuration $config --no-restore
+      run: dotnet build --no-restore --configuration ${{ matrix.configuration }}
 
     - name: Test
-      run: dotnet test --configuration $config --no-restore --verbosity normal --collect:"XPlat Code Coverage"
+      run: dotnet test --no-restore --configuration ${{ matrix.configuration }} --verbosity normal --collect:"XPlat Code Coverage"
       
     - name: Upload Code Coverage
       uses: codecov/codecov-action@v1

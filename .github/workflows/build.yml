@@ -15,6 +15,9 @@ jobs:
       DOTNET_NOLOGO: true
       # disable telemetry (reduces dotnet tool output in logs)
       DOTNET_CLI_TELEMETRY_OPTOUT: true
+      AZURE_KEY_VAULT_URI: ${{ secrets.AZURE_KEY_VAULT_URI }}
+      AZURE_KEY_VAULT_CLIENT_ID: ${{ secrets.AZURE_KEY_VAULT_CLIENT_ID }}
+      AZURE_KEY_VAULT_CLIENT_SECRET: ${{ secrets.AZURE_KEY_VAULT_CLIENT_SECRET }}
 
     strategy:
       # let us get failures from other jobs even if one fails
@@ -51,9 +54,14 @@ jobs:
       run: dotnet build --no-restore --configuration ${{ matrix.configuration }}
 
     - name: Test
-      run: dotnet test --no-restore --configuration ${{ matrix.configuration }} --verbosity normal --collect:"XPlat Code Coverage"
+      run: dotnet test --no-restore --configuration ${{ matrix.configuration }} --verbosity minimal --collect:"XPlat Code Coverage" src/Azure.ServiceBus.Queue.MessageReprocessor.UnitTests
       
     - name: Upload Code Coverage
       uses: codecov/codecov-action@v1
       with:
         flags: dotnet
+
+    - name: Integration Tests
+      env:
+        ServiceBusConfiguration: ${{ secrets.ServiceBusConfiguration }}
+      run: dotnet test --no-restore --configuration ${{ matrix.configuration }} --verbosity minimal --collect:"XPlat Code Coverage" src/Azure.ServiceBus.Queue.MessageReprocessor.IntegrationTests

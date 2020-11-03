@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Transactions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 
@@ -171,7 +170,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor
                     _queueClientImplementation.ClientId);
                 messageHandlerOptions.ExceptionReceivedHandler?.Invoke(args);
 
-                await _queueClientImplementation.AbandonAsync(_messageInspector.GetLockToken(message));
+                await _queueClientImplementation.CompleteAsync(_messageInspector.GetLockToken(message));
             };
         }
 
@@ -202,15 +201,8 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor
             messageCopy.MessageId = Guid.NewGuid().ToString();
             _messagePropertiesHelper.EnrichWithAttempts(messageCopy, attempt);
 
-            using (TransactionScope transactionScope = new TransactionScope())
-            {
-                // If any of those operations fail it means we've lost connection to the ServiceBus
-                // The next time we see this message again will be handled as it was abandoned
-                await Task.WhenAll(
-                    _queueClientImplementation.ScheduleMessageAsync(messageCopy, _dateTimeProvider.UtcNow + delay),
-                    _queueClientImplementation.CompleteAsync(lockToken));
-                transactionScope.Complete();
-            }
+            await _queueClientImplementation.ScheduleMessageAsync(messageCopy, _dateTimeProvider.UtcNow + delay);
+            await _queueClientImplementation.CompleteAsync(lockToken);
         }
     }
 }

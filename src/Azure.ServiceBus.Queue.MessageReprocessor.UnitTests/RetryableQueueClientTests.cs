@@ -175,7 +175,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor.UnitTests
         }
 
         [Fact]
-        public async Task GivenMessage_WhenMessageProcessingFailedWithAnyException_ThenAbandonsMessage()
+        public async Task GivenMessage_WhenMessageProcessingFailedWithAnyException_ThenCompletesMessage()
         {
             var target = ConstructTarget();
 
@@ -185,7 +185,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor.UnitTests
             await _receiveMessageFunc(_message, CancellationToken.None);
 
             await _queueClientImplementation.Received()
-                .AbandonAsync(_lockToken);
+                .CompleteAsync(_lockToken);
         }
 
         [Fact]

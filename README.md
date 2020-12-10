@@ -4,24 +4,28 @@
 This .NET Standard library adds a wrapper for Azure Service Bus Queue client to customize message handling retry mechanism.
 
 ## When it might be useful
-1. Scenarios that use an external service, which might be down or fails to handle the incoming request.
+1. Scenarios that use an external service, which might be down or randomly fail handling incoming requests.
 2. Scenarios when default retry processing mechanism is not suitable or desirable.
 3. Scenarios with customizable retry delay.
 
 ## Requires
-1. Connection string to the Azure Service Bus should have Listen-and-Write access role for an existing Queue.
-2. Or connection string to the Azure Service Bus should have Manage access role (to be able to create a Queue dynamically).
+1. Connection string to the Azure Service Bus should have Listen-and-Write access role for an existing Azure Service Bus Queue.
+2. Or connection string to the Azure Service Bus should have Manage access role (to be able to create a Queue dynamically) [to be implemented].
 
-## API (draft)
+## API
 
 ```C#
-IQueueClient queueClient = new RetryableQueueClient(...);
 
-queueClient.RegisterMessageHandler(OnMessageReceived, new RetryOptions());
+RetryableQueueClient retryQueue = new RetryableQueueClient(
+    _configuration.ListenAndSendConnectionString,
+    _queueName,
+    new RetrySettings(new LinearDelayStrategy(3, TimeSpan.FromSeconds(10))));
 
-void onMessageReceived(Message message)
+retryQueue.RegisterMessageHandler(OnMessageReceived, args => Task.CompletedTask);
+
+async Task OnMessageReceived(Message message, CancellationToken cancellationToken)
 {
-  HttpResponseMessage response = _externalService.Call(new Request(message));
+  HttpResponseMessage response = await _externalService.CallAsync(new Request(message), cancellationToken);
   if (response.StatusCode == HttpStatusCode.InternalServerError)
   {
     throw new RetryableOperationException();

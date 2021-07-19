@@ -1,4 +1,5 @@
 using System;
+using Azure.ServiceBus.Queue.MessageReprocessor.DelayStrategies;
 using Microsoft.Azure.ServiceBus;
 using Shouldly;
 using Xunit;
@@ -13,7 +14,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor.UnitTests
         public void GivenNullOrEmptyConnectionString_WhenConstructing_ThenThrows(string connectionString)
         {
             Should.Throw<ArgumentException>(() =>
-                    new RetryableQueueClient(connectionString, "queue", new RetrySettings(new NoneDelayStrategy())))
+                    new RetryableQueueClient(connectionString, "queue", new RetrySettings(new NoDelayStrategy())))
                 .Message.ShouldBe("Value cannot be null or empty. (Parameter 'connectionString')");
         }
 
@@ -23,7 +24,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor.UnitTests
         public void GivenNullOrEmptyQueueName_WhenConstructing_ThenThrows(string queueName)
         {
             Should.Throw<ArgumentException>(() =>
-                    new RetryableQueueClient(Utils.ValidConnectionString, queueName, new RetrySettings(new NoneDelayStrategy())))
+                    new RetryableQueueClient(Utils.ValidConnectionString, queueName, new RetrySettings(new NoDelayStrategy())))
                 .Message.ShouldBe("Value cannot be null or empty. (Parameter 'queueName')");
         }
 
@@ -39,7 +40,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor.UnitTests
         public void GivenNullQueueClient_WhenConstructing_ThenThrows()
         {
             Should.Throw<ArgumentNullException>(() =>
-                    new RetryableQueueClient(null, new RetrySettings(new NoneDelayStrategy())))
+                    new RetryableQueueClient(null, new RetrySettings(new NoDelayStrategy())))
                 .ParamName.ShouldBe("queueClient");
         }
 

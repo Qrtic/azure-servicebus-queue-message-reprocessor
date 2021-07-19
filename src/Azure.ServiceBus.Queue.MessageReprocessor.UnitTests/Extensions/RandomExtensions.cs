@@ -6,7 +6,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor.UnitTests.Extensions
     {
         public static TimeSpan GetTimeSpan(this Random random)
         {
-            return TimeSpan.FromMilliseconds(random.Next());
+            return TimeSpan.FromMilliseconds(random.Next(100000));
         }
 
         public static string GetString(this Random _)

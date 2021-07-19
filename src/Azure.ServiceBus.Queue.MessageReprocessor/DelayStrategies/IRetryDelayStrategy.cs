@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Azure.ServiceBus.Queue.MessageReprocessor
+namespace Azure.ServiceBus.Queue.MessageReprocessor.DelayStrategies
 {
     public interface IRetryDelayStrategy
     {

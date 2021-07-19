@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 
-namespace Azure.ServiceBus.Queue.MessageReprocessor
+namespace Azure.ServiceBus.Queue.MessageReprocessor.DelayStrategies
 {
-    public class NoneDelayStrategy : IRetryDelayStrategy
+    public class NoDelayStrategy : IRetryDelayStrategy
     {
         public bool CanDelay(int attempt)
         {

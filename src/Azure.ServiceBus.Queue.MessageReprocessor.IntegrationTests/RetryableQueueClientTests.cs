@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.ServiceBus.Queue.MessageReprocessor.DelayStrategies;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus.Management;
@@ -89,7 +90,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor.IntegrationTests
                 _configuration.ListenAndSendConnectionString,
                 _queueName,
                 new RetrySettings(
-                    new LinearDelayStrategy(3, TimeSpan.FromSeconds(10))));
+                    new LinearDelayStrategy(3, TimeSpan.FromSeconds(10), 2)));
 
             retryQueue.RegisterMessageHandler(handler, args => Task.CompletedTask);
             await _queueClient.SendAsync(new Message());
@@ -112,7 +113,7 @@ namespace Azure.ServiceBus.Queue.MessageReprocessor.IntegrationTests
                 _configuration.ListenAndSendConnectionString,
                 _queueName,
                 new RetrySettings(
-                    new LinearDelayStrategy(1, TimeSpan.FromSeconds(10))));
+                    new LinearDelayStrategy(1, TimeSpan.FromSeconds(10), 2)));
 
             retryQueue.RegisterMessageHandler(handler, args => Task.CompletedTask);
             await _queueClient.SendAsync(new Message());
